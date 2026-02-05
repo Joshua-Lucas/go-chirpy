@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
@@ -45,7 +46,7 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type returnVals struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -57,16 +58,32 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	CHARACTER_COUNT := 140
+	max_characters := 140
 
 	// Validate length of string
-	if len(b.Body) > CHARACTER_COUNT {
+	if len(b.Body) > max_characters {
 		httputil.RespondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
+	// Validate profane words
+	var profaneWords = map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	words := strings.Fields(b.Body)
+	for i := range words {
+		if _, ok := profaneWords[strings.ToLower(words[i])]; ok {
+			words[i] = "****"
+		}
+	}
+
+	parsedWords := strings.Join(words, " ")
+
 	respBody := returnVals{
-		Valid: true,
+		CleanedBody: parsedWords,
 	}
 
 	httputil.RespondWithJSON(w, http.StatusOK, respBody)
