@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync/atomic"
+
+	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
 )
 
 type apiConfig struct {
@@ -43,30 +44,16 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 
+	type returnVals struct {
+		Valid bool `json:"valid"`
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	b := body{}
 	err := decoder.Decode(&b)
 
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
-		w.WriteHeader(500)
-
-		type error struct {
-			Error string `json:"error"`
-		}
-
-		errMessage := error{
-			Error: "Something went wrong",
-		}
-
-		dat, err := json.Marshal(errMessage)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(dat)
+		httputil.RespondWithError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
 
@@ -74,44 +61,15 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validate length of string
 	if len(b.Body) > CHARACTER_COUNT {
-		type validationMsg struct {
-			Error string `json:"error"`
-		}
-
-		msg := validationMsg{
-			Error: "Chirp is too long",
-		}
-
-		dat, err := json.Marshal(msg)
-		if err != nil {
-			log.Printf("Error marshalling JSON: %s", err)
-			w.WriteHeader(500)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-
-		w.Write(dat)
+		httputil.RespondWithError(w, http.StatusBadRequest, "Chirp is too long")
 		return
-	}
-
-	type returnVals struct {
-		Valid bool `json:"valid"`
 	}
 
 	respBody := returnVals{
 		Valid: true,
 	}
 
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-	w.Write(dat)
+	httputil.RespondWithJSON(w, http.StatusOK, respBody)
 
 }
 
