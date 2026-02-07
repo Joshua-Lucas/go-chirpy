@@ -1,17 +1,24 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync/atomic"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
+	"github.com/Joshua-Lucas/go-chirpy/internal/database"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
 }
 
 func (c *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -91,9 +98,21 @@ func validateChirpHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	godotenv.Load()
+
+	// DB Connection
+	dbURL := os.Getenv("DB_URL")
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dbQueries := database.New(db)
 
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
+		dbQueries:      dbQueries,
 	}
 	mux := http.NewServeMux()
 
@@ -120,6 +139,6 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricHandlerServeHTTP)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetricsHandlerServeHTTP)
 
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 
 }
