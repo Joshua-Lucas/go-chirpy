@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net/http"
 	"os"
 	"sync/atomic"
 
@@ -32,10 +31,6 @@ func main() {
 	}
 
 	srv := server.NewServer(&apiCfg)
-
-	// Admin Routes
-	mux.HandleFunc("GET /admin/metrics", apiCfg.metricHandlerServeHTTP)
-	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetricsHandlerServeHTTP)
 
 	log.Fatal(srv.ListenAndServe(":8080"))
 
