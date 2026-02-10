@@ -33,10 +33,6 @@ func main() {
 
 	srv := server.NewServer(&apiCfg)
 
-	// App routes
-	fs := http.FileServer(http.Dir("."))
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", fs)))
-
 	// Admin Routes
 	mux.HandleFunc("GET /admin/metrics", apiCfg.metricHandlerServeHTTP)
 	mux.HandleFunc("POST /admin/reset", apiCfg.resetMetricsHandlerServeHTTP)

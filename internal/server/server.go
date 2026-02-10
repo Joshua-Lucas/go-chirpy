@@ -15,8 +15,12 @@ func NewServer(cfg *APIConfig) *Server {
 }
 
 func (s Server) routes(cfg *APIConfig) {
+	 // Static files route
+    fs := http.FileServer(http.Dir("./static")) 
+    s.mux.Handle("/app/", cfg.MiddlewareMetricsInc(http.StripPrefix("/app/", fs)))
+
 	RegisterAPIRoutes(s.mux, cfg)
-	//RegisterAppRoutes(s.mux)
+	
   //RegisterAdminRoutes(s.mux, cfg)	
 }
 
