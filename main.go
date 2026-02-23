@@ -27,6 +27,7 @@ func main() {
 	apiCfg := api.APIConfig{
 		FileserverHits: atomic.Int32{},
 		DBQueries:      database.New(db),
+		Platform:       os.Getenv("PLATFORM"),
 	}
 
 	mux := http.NewServeMux()
