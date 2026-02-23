@@ -21,5 +21,5 @@ func (cfg *APIConfig) RegisterAPIRoutes(mux *http.ServeMux) {
 
 func (cfg *APIConfig) RegisterAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /admin/metrics", cfg.MetricHandlerServeHTTP)
-	mux.HandleFunc("POST /admin/reset", cfg.ResetMetricsHandlerServeHTTP)
+	mux.HandleFunc("POST /admin/reset", cfg.ResetHandlerServeHTTP)
 }
