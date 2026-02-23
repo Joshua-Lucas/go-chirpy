@@ -2,7 +2,7 @@ package api
 
 import "net/http"
 
-func HealthHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))

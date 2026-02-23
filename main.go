@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"log"
+	"net/http"
 	"os"
 	"sync/atomic"
 
+	"github.com/Joshua-Lucas/go-chirpy/internal/api"
 	"github.com/Joshua-Lucas/go-chirpy/internal/database"
-	"github.com/Joshua-Lucas/go-chirpy/internal/server"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -23,15 +24,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbQueries := database.New(db)
-
-	apiCfg := server.APIConfig{
+	apiCfg := api.APIConfig{
 		FileserverHits: atomic.Int32{},
-		DBQueries:      dbQueries,
+		DBQueries:      database.New(db),
 	}
 
-	srv := server.NewServer(&apiCfg)
+	mux := http.NewServeMux()
 
-	log.Fatal(srv.ListenAndServe(":8080"))
+	apiCfg.RegisterRoutes(mux)
+
+	srv := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	err = srv.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }

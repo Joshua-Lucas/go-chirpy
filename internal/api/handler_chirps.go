@@ -8,7 +8,7 @@ import (
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
 )
 
-func ValidateChirpHandler(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) ValidateChirpHandler(w http.ResponseWriter, r *http.Request) {
 	type body struct {
 		Body string `json:"body"`
 	}
