@@ -31,6 +31,6 @@ func (cfg *APIConfig) ResetHandlerServeHTTP(w http.ResponseWriter, r *http.Reque
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong deleting ")
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 
 }
