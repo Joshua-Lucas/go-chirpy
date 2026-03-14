@@ -5,15 +5,26 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
+	"github.com/Joshua-Lucas/go-chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
-func (cfg *APIConfig) CreateChirp(w http.ResponseWriter, r http.Request) {
+type Chirp struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserId    uuid.UUID `json:"user_id"`
+}
+
+func (cfg *APIConfig) CreateChirpHandler(w http.ResponseWriter, r *http.Request) {
 
 	type reqBody struct {
-		Body   string `json:"body"`
-		UserId string `json:"user_id"`
+		Body   string    `json:"body"`
+		UserId uuid.UUID `json:"user_id"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -28,17 +39,41 @@ func (cfg *APIConfig) CreateChirp(w http.ResponseWriter, r http.Request) {
 	cleanedChirp, err := validateChirp(b.Body)
 
 	if err != nil {
-		httputil.RespondWithError(w, http.StatusBadGateway, err.Error())
+		httputil.RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	// TODO: Run Create query
-	// TODO: Hanlde the return
+	params := database.CreateChirpParams{
+		Body:   cleanedChirp,
+		UserID: b.UserId,
+	}
+
+	newChirp, err := cfg.DBQueries.CreateChirp(r.Context(), params)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
+		return
+	}
+
+	wBody := Chirp{
+		ID:        newChirp.ID,
+		CreatedAt: newChirp.CreatedAt,
+		UpdatedAt: newChirp.UpdatedAt,
+		Body:      newChirp.Body,
+		UserId:    newChirp.UserID,
+	}
+
+	err = httputil.RespondWithJSON(w, http.StatusCreated, wBody)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+		return
+	}
 }
 
-// validateChirp checks that a chirp body is within the allowed length
-// and replaces any banned words with "****".
-// It returns the cleaned body or an error if the chirp is too long.
+// validateChirp checks that a chirp body is within the allowed length and
+// replaces any banned words with "****". It returns the cleaned body or an
+// error if the chirp is too long.
 func validateChirp(body string) (string, error) {
 
 	max_characters := 140
