@@ -24,10 +24,16 @@ func (cfg *APIConfig) CreateChirp(w http.ResponseWriter, r http.Request) {
 		httputil.RespondWithError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
-	
-	// TODO: Validate chirp string
+
+	cleanedChirp, err := validateChirp(b.Body)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
 	// TODO: Run Create query
-	// TODO: Hanlde the return 
+	// TODO: Hanlde the return
 }
 
 // validateChirp checks that a chirp body is within the allowed length
