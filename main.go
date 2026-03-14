@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync/atomic"
+	"time"
 
 	"github.com/Joshua-Lucas/go-chirpy/internal/api"
 	"github.com/Joshua-Lucas/go-chirpy/internal/database"
@@ -35,8 +36,13 @@ func main() {
 	apiCfg.RegisterRoutes(mux)
 
 	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+		Addr:              ":8080",
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	err = srv.ListenAndServe()
