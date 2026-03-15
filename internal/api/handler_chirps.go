@@ -132,3 +132,35 @@ func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 }
+
+func (cfg *APIConfig) GetChripHandler(w http.ResponseWriter, r *http.Request) {
+
+	chirpId, err := uuid.Parse(r.PathValue("chirpId"))
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+		return
+	}
+
+	dbChirp, err := cfg.DBQueries.GetChirp(r.Context(), chirpId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	chirp := Chirp{
+		ID:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserId:    dbChirp.UserID,
+	}
+
+	err = httputil.RespondWithJSON(w, http.StatusOK, chirp)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+		return
+	}
+}
