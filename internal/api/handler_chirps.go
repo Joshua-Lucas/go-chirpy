@@ -101,3 +101,34 @@ func validateChirp(body string) (string, error) {
 
 	return parsedWords, nil
 }
+
+func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request) {
+
+	dbChirps, err := cfg.DBQueries.ListChirps(r.Context())
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
+		return
+	}
+
+	chirpList := make([]Chirp, 0, len(dbChirps))
+
+	for _, v := range dbChirps {
+		chirp := Chirp{
+
+			ID:        v.ID,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+			Body:      v.Body,
+			UserId:    v.UserID,
+		}
+		chirpList = append(chirpList, chirp)
+	}
+
+	err = httputil.RespondWithJSON(w, http.StatusOK, chirpList)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+		return
+	}
+}
