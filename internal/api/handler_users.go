@@ -6,6 +6,8 @@ import (
 	"time"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
+	"github.com/Joshua-Lucas/go-chirpy/internal/auth"
+	"github.com/Joshua-Lucas/go-chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +20,8 @@ type User struct {
 
 func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	type body struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -26,10 +29,21 @@ func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	err := decoder.Decode(&b)
 
 	if err != nil {
-		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong")
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong decoding body")
 	}
 
-	newUser, err := cfg.DBQueries.CreateUser(r.Context(), b.Email)
+	hashedPassword, err := auth.HashPassword(b.Password)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong hashing password")
+	}
+
+	userParams := database.CreateUserParams{
+		Email:          b.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	newUser, err := cfg.DBQueries.CreateUser(r.Context(), userParams)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating user")
