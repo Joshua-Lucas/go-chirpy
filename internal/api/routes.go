@@ -16,6 +16,7 @@ func (cfg *APIConfig) RegisterRoutes(mux *http.ServeMux) {
 func (cfg *APIConfig) RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/healthz", cfg.HealthHandler)
 	mux.HandleFunc("POST /api/users", cfg.CreateUserHandler)
+	mux.HandleFunc("POST /api/login", cfg.LoginUserHandler)
 	mux.HandleFunc("GET /api/chirps", cfg.GetAllChripsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpId}", cfg.GetChripHandler)
 	mux.HandleFunc("POST /api/chirps", cfg.CreateChirpHandler)

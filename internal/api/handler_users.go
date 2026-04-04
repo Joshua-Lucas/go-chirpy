@@ -64,3 +64,48 @@ func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 }
+
+func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
+	type body struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	b := body{}
+	err := decoder.Decode(&b)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong decoding body")
+	}
+
+	user, err := cfg.DBQueries.GetUserByEmail(r.Context(), b.Email)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
+	}
+
+	isValid, err := auth.CheckPasswordHash(b.Password, user.HashedPassword)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong")
+	}
+
+	if isValid == false {
+		httputil.RespondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
+	}
+
+	wBody := User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	}
+
+	// Respond with JSON
+	err = httputil.RespondWithJSON(w, http.StatusOK, wBody)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+	}
+}
