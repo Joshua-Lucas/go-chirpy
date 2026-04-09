@@ -8,6 +8,7 @@ import (
 	"time"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
+	"github.com/Joshua-Lucas/go-chirpy/internal/auth"
 	"github.com/Joshua-Lucas/go-chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -23,13 +24,27 @@ type Chirp struct {
 func (cfg *APIConfig) CreateChirpHandler(w http.ResponseWriter, r *http.Request) {
 
 	type reqBody struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	// Valid user
+	token, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.TokenSecret)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
 	}
 
 	decoder := json.NewDecoder(r.Body)
 	b := reqBody{}
-	err := decoder.Decode(&b)
+	err = decoder.Decode(&b)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusBadRequest, "Something went wrong")
@@ -45,7 +60,7 @@ func (cfg *APIConfig) CreateChirpHandler(w http.ResponseWriter, r *http.Request)
 
 	params := database.CreateChirpParams{
 		Body:   cleanedChirp,
-		UserID: b.UserId,
+		UserID: userId,
 	}
 
 	newChirp, err := cfg.DBQueries.CreateChirp(r.Context(), params)
