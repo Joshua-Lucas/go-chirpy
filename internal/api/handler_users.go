@@ -16,6 +16,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token"`
 }
 
 func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,8 +68,9 @@ func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	type body struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -95,11 +97,25 @@ func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 	}
 
+	// Token assignment
+	expiresIn := time.Now().Add(24 * time.Hour).Second()
+
+	if b.ExpiresInSeconds != 0 && expiresIn > b.ExpiresInSeconds {
+		expiresIn = b.ExpiresInSeconds
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.TokenSecert, time.Duration(expiresIn))
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Error occurred with token assignment")
+	}
+
 	wBody := User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	}
 
 	// Respond with JSON
