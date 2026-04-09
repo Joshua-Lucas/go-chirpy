@@ -98,13 +98,12 @@ func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Token assignment
-	expiresIn := time.Now().Add(24 * time.Hour).Second()
+	expiresIn := time.Hour
 
-	if b.ExpiresInSeconds != 0 && expiresIn > b.ExpiresInSeconds {
-		expiresIn = b.ExpiresInSeconds
+	if b.ExpiresInSeconds > 0 && time.Duration(b.ExpiresInSeconds)*time.Second < time.Hour {
+		expiresIn = time.Duration(b.ExpiresInSeconds) * time.Second
 	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.TokenSecert, time.Duration(expiresIn))
+	token, err := auth.MakeJWT(user.ID, cfg.TokenSecret, expiresIn)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Error occurred with token assignment")
