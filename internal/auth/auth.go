@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"os"
+	"errors"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -37,11 +37,11 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 }
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
-	mySigningKey := []byte(os.Getenv("JWT_SIGNING_KEY"))
+	mySigningKey := []byte(tokenSecret)
 
 	claims := jwt.RegisteredClaims{
 		Issuer:    "chirpy-access",
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Subject:   userID.String(),
 	}
@@ -54,4 +54,38 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	}
 
 	return ss, nil
+}
+
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
+		return []byte(tokenSecret), nil
+	})
+
+	if err != nil {
+		return uuid.Nil, err
+	} else if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
+
+		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
+			return uuid.Nil, errors.New("Token is expired")
+		}
+
+		userId, err := claims.GetSubject()
+
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		parsedUserId, err := uuid.Parse(userId)
+
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		return parsedUserId, nil
+
+	} else {
+		return uuid.Nil, errors.New("Invalid token")
+	}
+
 }

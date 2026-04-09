@@ -2,8 +2,11 @@ package auth_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/Joshua-Lucas/go-chirpy/internal/auth"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func TestCreatingAHash(t *testing.T) {
@@ -64,4 +67,83 @@ func TestCheckingHash(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJWTParse(t *testing.T) {
+
+	SECERT := "test-secret"
+	userID := uuid.New()
+
+	validToken, _ := auth.MakeJWT(userID, SECERT, time.Hour)
+	expiredToken, _ := auth.MakeJWT(userID, SECERT, -time.Minute)
+
+	invalidUUIDToken := func() string {
+		claims := jwt.RegisteredClaims{Subject: "not-a-uuid"}
+		tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signed, _ := tok.SignedString([]byte(SECERT))
+		return signed
+	}()
+
+	tests := []struct {
+		name        string
+		token       string
+		secret      string
+		nowFunc     func() time.Time
+		expectError bool
+		expectedID  uuid.UUID
+	}{
+		{
+			name:        "valid token",
+			token:       validToken,
+			secret:      SECERT,
+			expectError: false,
+			expectedID:  userID,
+		},
+		{
+			name:        "expired token",
+			token:       expiredToken,
+			secret:      SECERT,
+			expectError: true,
+		},
+		{
+			name:        "wrong secret",
+			token:       validToken,
+			secret:      "wrong-secret",
+			expectError: true,
+		},
+		{
+			name:        "invalid token string",
+			token:       "not-a-token",
+			secret:      SECERT,
+			expectError: true,
+		},
+		{
+			name:        "invalid UUID in subject",
+			token:       invalidUUIDToken,
+			secret:      SECERT,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := auth.ValidateJWT(tt.token, tt.secret)
+
+			if tt.expectError {
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if id != tt.expectedID {
+				t.Errorf("expected UUID %v, got %v", tt.expectedID, id)
+			}
+		})
+	}
+
 }
