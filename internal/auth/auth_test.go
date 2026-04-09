@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -142,6 +143,58 @@ func TestJWTParse(t *testing.T) {
 
 			if id != tt.expectedID {
 				t.Errorf("expected UUID %v, got %v", tt.expectedID, id)
+			}
+		})
+	}
+
+}
+
+func TestGetBearToken(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		headers     http.Header
+		expect      string
+		expectError bool
+	}{
+		{
+			name: "valid token",
+			headers: http.Header{
+				"Authorization": []string{"Bearer abc123"},
+			},
+			expect: "abc123",
+		},
+		{
+			name:        "missing header",
+			headers:     http.Header{},
+			expectError: true,
+		},
+		{
+			name: "empty bearer",
+			headers: http.Header{
+				"Authorization": []string{"Bearer "},
+			},
+			expectError: true,
+		},
+		{
+			name: "wrong format",
+			headers: http.Header{
+				"Authorization": []string{"abc123"},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := auth.GetBearerToken(tt.headers)
+
+			if (err != nil) != tt.expectError {
+				t.Fatalf("expected error=%v, got err=%v", tt.expectError, err)
+			}
+
+			if got != tt.expect {
+				t.Errorf("expected %q, got %q", tt.expect, got)
 			}
 		})
 	}

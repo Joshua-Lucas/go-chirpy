@@ -2,6 +2,8 @@ package auth
 
 import (
 	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -88,4 +90,25 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, errors.New("Invalid token")
 	}
 
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	authString := headers.Get("Authorization")
+
+	if authString == "" {
+		return "", errors.New("No Authorization header set")
+	}
+
+	const prefix = "Bearer "
+	if !strings.HasPrefix(authString, prefix) {
+		return "", errors.New("improper Authorization format")
+	}
+
+	tokenString := strings.TrimPrefix(authString, prefix)
+
+	if tokenString == "" {
+		return "", errors.New("No token sent")
+	}
+
+	return tokenString, nil
 }
