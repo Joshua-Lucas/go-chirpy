@@ -29,6 +29,7 @@ func main() {
 		FileserverHits: atomic.Int32{},
 		DBQueries:      database.New(db),
 		Platform:       os.Getenv("PLATFORM"),
+		TokenSecert:    os.Getenv("JWT_SIGNING_KEY"),
 	}
 
 	mux := http.NewServeMux()
