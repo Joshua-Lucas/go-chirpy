@@ -12,11 +12,12 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -68,9 +69,8 @@ func (cfg *APIConfig) CreateUserHandler(w http.ResponseWriter, r *http.Request) 
 
 func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 	type body struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -97,24 +97,37 @@ func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(w, http.StatusUnauthorized, "Incorrect email or password")
 	}
 
-	// Token assignment
+	// --- Token assignment ---
+
+	// Access Token
 	expiresIn := time.Hour
 
-	if b.ExpiresInSeconds > 0 && time.Duration(b.ExpiresInSeconds)*time.Second < time.Hour {
-		expiresIn = time.Duration(b.ExpiresInSeconds) * time.Second
-	}
 	token, err := auth.MakeJWT(user.ID, cfg.TokenSecret, expiresIn)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Error occurred with token assignment")
 	}
+	// Refresh token
+	rawRefreshToken := auth.MakeRefreshToken()
+
+	refreshTokenParams := database.CreateRefreshTokenParams{
+		Token:     rawRefreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+	}
+	refreshToken, err := cfg.DBQueries.CreateRefreshToken(r.Context(), refreshTokenParams)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Error occurred with refresh token assignment")
+	}
 
 	wBody := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     token,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	// Respond with JSON
