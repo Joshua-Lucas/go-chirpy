@@ -127,7 +127,7 @@ func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:    user.UpdatedAt,
 		Email:        user.Email,
 		Token:        token,
-		RefreshToken: refreshToken,
+		RefreshToken: refreshToken.Token,
 	}
 
 	// Respond with JSON
