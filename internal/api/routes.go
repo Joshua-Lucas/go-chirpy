@@ -18,6 +18,7 @@ func (cfg *APIConfig) RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/refresh", cfg.RefreshTokenHandler)
 	mux.HandleFunc("POST /api/revoke", cfg.RevokeTokenHandler)
 	mux.HandleFunc("POST /api/users", cfg.CreateUserHandler)
+	mux.HandleFunc("PUT /api/users", cfg.UpdateUserHandler)
 	mux.HandleFunc("POST /api/login", cfg.LoginUserHandler)
 	mux.HandleFunc("GET /api/chirps", cfg.GetAllChripsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpId}", cfg.GetChripHandler)

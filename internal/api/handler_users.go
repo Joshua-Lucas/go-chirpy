@@ -137,3 +137,58 @@ func (cfg *APIConfig) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
 	}
 }
+
+func (cfg *APIConfig) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	type body struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	// Valid user
+	token, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.TokenSecret)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	b := body{}
+	err = decoder.Decode(&b)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong decoding body")
+	}
+
+	hashedPassword, err := auth.HashPassword(b.Password)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusBadGateway, "Something went wrong hashing password")
+	}
+
+	updateUserParams := database.UpdateUserParams{
+		Email:          b.Email,
+		HashedPassword: hashedPassword,
+		ID:             userId,
+	}
+
+	user, err := cfg.DBQueries.UpdateUser(r.Context(), updateUserParams)
+
+	wBody := User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	}
+
+	// Respond with JSON
+	httputil.RespondWithJSON(w, http.StatusOK, wBody)
+
+}
