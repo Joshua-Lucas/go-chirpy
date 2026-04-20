@@ -49,3 +49,23 @@ func (cfg *APIConfig) RefreshTokenHandler(w http.ResponseWriter, r *http.Request
 	httputil.RespondWithJSON(w, http.StatusOK, wBody)
 
 }
+
+func (cfg *APIConfig) RevokeTokenHandler(w http.ResponseWriter, r *http.Request) {
+
+	token, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	err = cfg.DBQueries.RevokeRefreshToken(r.Context(), token)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+
+}
