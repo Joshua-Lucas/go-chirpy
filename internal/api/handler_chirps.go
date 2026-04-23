@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -120,6 +121,8 @@ func validateChirp(body string) (string, error) {
 func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request) {
 
 	filter := r.URL.Query().Get("author_id")
+	sortQuery := r.URL.Query().Get("sort")
+
 	var dbChirps []database.Chirp
 
 	if filter != "" {
@@ -147,6 +150,10 @@ func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request
 			httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
 			return
 		}
+	}
+
+	if sortQuery == "desc" {
+		sort.Slice(dbChirps, func(i, j int) bool { return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt) })
 	}
 
 	chirpList := make([]Chirp, 0, len(dbChirps))
