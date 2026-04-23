@@ -7,10 +7,19 @@ import (
 	"net/http"
 
 	httputil "github.com/Joshua-Lucas/go-chirpy/internal"
+	"github.com/Joshua-Lucas/go-chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
 func (cfg *APIConfig) PolkaHandler(w http.ResponseWriter, r *http.Request) {
+
+	apiKey, err := auth.GetAPIKey(r.Header)
+
+	if err != nil || apiKey != cfg.PolkaKey {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
 	type body struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -20,7 +29,7 @@ func (cfg *APIConfig) PolkaHandler(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	b := body{}
-	err := decoder.Decode(&b)
+	err = decoder.Decode(&b)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusBadRequest, "Something went wrong decoding body")
