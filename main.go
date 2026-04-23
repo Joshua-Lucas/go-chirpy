@@ -30,6 +30,7 @@ func main() {
 		DBQueries:      database.New(db),
 		Platform:       os.Getenv("PLATFORM"),
 		TokenSecret:    os.Getenv("JWT_SIGNING_KEY"),
+		PolkaKey: os.Getenv("POLKA_KEY"),
 	}
 
 	mux := http.NewServeMux()

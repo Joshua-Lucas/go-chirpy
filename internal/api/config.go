@@ -11,4 +11,5 @@ type APIConfig struct {
 	DBQueries      *database.Queries
 	Platform       string
 	TokenSecret    string
+	PolkaKey       string
 }
