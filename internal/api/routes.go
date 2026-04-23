@@ -15,15 +15,24 @@ func (cfg *APIConfig) RegisterRoutes(mux *http.ServeMux) {
 
 func (cfg *APIConfig) RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/healthz", cfg.HealthHandler)
+
+	// AUTH
 	mux.HandleFunc("POST /api/refresh", cfg.RefreshTokenHandler)
 	mux.HandleFunc("POST /api/revoke", cfg.RevokeTokenHandler)
+
+	// USERS
 	mux.HandleFunc("POST /api/users", cfg.CreateUserHandler)
 	mux.HandleFunc("PUT /api/users", cfg.UpdateUserHandler)
 	mux.HandleFunc("POST /api/login", cfg.LoginUserHandler)
+
+	// CHIRPS
 	mux.HandleFunc("GET /api/chirps", cfg.GetAllChripsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpId}", cfg.GetChripHandler)
 	mux.HandleFunc("POST /api/chirps", cfg.CreateChirpHandler)
 	mux.HandleFunc("DELETE /api/chirps/{chirpId}", cfg.DeleteChripHandler)
+
+	// WEBHOOKS
+	mux.HandleFunc("POST /api/polka/webhooks", cfg.PolkaHandler)
 }
 
 func (cfg *APIConfig) RegisterAdminRoutes(mux *http.ServeMux) {
