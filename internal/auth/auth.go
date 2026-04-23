@@ -122,3 +122,25 @@ func MakeRefreshToken() string {
 	tokenStr := hex.EncodeToString(key)
 	return tokenStr
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	authString := headers.Get("Authorization")
+
+	if authString == "" {
+		return "", errors.New("No Authorization header set")
+	}
+
+	const prefix = "ApiKey "
+	if !strings.HasPrefix(authString, prefix) {
+		return "", errors.New("improper Authorization format")
+	}
+
+	apiKey := strings.TrimPrefix(authString, prefix)
+
+	if apiKey == "" {
+		return "", errors.New("No token sent")
+	}
+
+	return apiKey, nil
+
+}

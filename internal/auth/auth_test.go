@@ -200,3 +200,55 @@ func TestGetBearToken(t *testing.T) {
 	}
 
 }
+
+func TestGetApiKey(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		headers     http.Header
+		expect      string
+		expectError bool
+	}{
+		{
+			name: "valid token",
+			headers: http.Header{
+				"Authorization": []string{"ApiKey abc123"},
+			},
+			expect: "abc123",
+		},
+		{
+			name:        "missing header",
+			headers:     http.Header{},
+			expectError: true,
+		},
+		{
+			name: "empty bearer",
+			headers: http.Header{
+				"Authorization": []string{"ApiKey "},
+			},
+			expectError: true,
+		},
+		{
+			name: "wrong format",
+			headers: http.Header{
+				"Authorization": []string{"abc123"},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := auth.GetAPIKey(tt.headers)
+
+			if (err != nil) != tt.expectError {
+				t.Fatalf("expected error=%v, got err=%v", tt.expectError, err)
+			}
+
+			if got != tt.expect {
+				t.Errorf("expected %q, got %q", tt.expect, got)
+			}
+		})
+	}
+
+}
