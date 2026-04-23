@@ -119,11 +119,34 @@ func validateChirp(body string) (string, error) {
 
 func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request) {
 
-	dbChirps, err := cfg.DBQueries.ListChirps(r.Context())
+	filter := r.URL.Query().Get("author_id")
+	var dbChirps []database.Chirp
 
-	if err != nil {
-		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
-		return
+	if filter != "" {
+		filter, err := uuid.Parse(filter)
+
+		if err != nil {
+
+			httputil.RespondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		dbChirps, err = cfg.DBQueries.ListChirpsByAuthor(r.Context(), filter)
+
+		if err != nil {
+			httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
+			return
+		}
+
+	} else {
+		var err error
+
+		dbChirps, err = cfg.DBQueries.ListChirps(r.Context())
+
+		if err != nil {
+			httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong creating chirp")
+			return
+		}
 	}
 
 	chirpList := make([]Chirp, 0, len(dbChirps))
@@ -140,7 +163,7 @@ func (cfg *APIConfig) GetAllChripsHandler(w http.ResponseWriter, r *http.Request
 		chirpList = append(chirpList, chirp)
 	}
 
-	err = httputil.RespondWithJSON(w, http.StatusOK, chirpList)
+	err := httputil.RespondWithJSON(w, http.StatusOK, chirpList)
 
 	if err != nil {
 		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
