@@ -23,6 +23,7 @@ func (cfg *APIConfig) RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/chirps", cfg.GetAllChripsHandler)
 	mux.HandleFunc("GET /api/chirps/{chirpId}", cfg.GetChripHandler)
 	mux.HandleFunc("POST /api/chirps", cfg.CreateChirpHandler)
+	mux.HandleFunc("DELETE /api/chirps/{chirpId}", cfg.DeleteChripHandler)
 }
 
 func (cfg *APIConfig) RegisterAdminRoutes(mux *http.ServeMux) {

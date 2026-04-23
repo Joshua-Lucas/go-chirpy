@@ -179,3 +179,49 @@ func (cfg *APIConfig) GetChripHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (cfg *APIConfig) DeleteChripHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Valid user
+	token, err := auth.GetBearerToken(r.Header)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.TokenSecret)
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	chirpId, err := uuid.Parse(r.PathValue("chirpId"))
+
+	if err != nil {
+		httputil.RespondWithError(w, http.StatusInternalServerError, "Something went wrong responding ")
+		return
+	}
+
+	dbChirp, err := cfg.DBQueries.GetChirp(r.Context(), chirpId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if dbChirp.UserID != userId {
+		httputil.RespondWithError(w, http.StatusForbidden, "User is not authorized for this action")
+		return
+	}
+
+	err = cfg.DBQueries.DeleteChirp(r.Context(), chirpId)
+
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
