@@ -1,5 +1,7 @@
+import LoginPage from "./pages/LoginPage";
+
 function App() {
-  return <h1 className="text-white">Hello World</h1>;
+  return <LoginPage />;
 }
 
 export default App;
