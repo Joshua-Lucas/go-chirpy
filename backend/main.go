@@ -34,7 +34,7 @@ func main() {
 		DBQueries:      database.New(db),
 		Platform:       os.Getenv("PLATFORM"),
 		TokenSecret:    os.Getenv("JWT_SIGNING_KEY"),
-		PolkaKey: os.Getenv("POLKA_KEY"),
+		PolkaKey:       os.Getenv("POLKA_KEY"),
 	}
 
 	mux := http.NewServeMux()
@@ -51,24 +51,23 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 
-	
-	   go func() {
-			 if err = srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-            log.Fatalf("HTTP server error: %v", err)
-        }
-        log.Println("Stopped serving new connections.")
-    }()
+	go func() {
+		if err = srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+		log.Println("Stopped serving new connections.")
+	}()
 
-    sigChan := make(chan os.Signal, 1)
-    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-    <-sigChan
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
 
-    shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
-    defer shutdownRelease()
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
 
-    if err := srv.Shutdown(shutdownCtx); err != nil {
-        log.Fatalf("HTTP shutdown error: %v", err)
-    }
-    log.Println("Graceful shutdown complete.")
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("HTTP shutdown error: %v", err)
+	}
+	log.Println("Graceful shutdown complete.")
 
 }
