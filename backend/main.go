@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/Joshua-Lucas/go-chirpy/internal/api"
@@ -47,9 +51,24 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	
+	   go func() {
+			 if err = srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+            log.Fatalf("HTTP server error: %v", err)
+        }
+        log.Println("Stopped serving new connections.")
+    }()
+
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+    <-sigChan
+
+    shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+    defer shutdownRelease()
+
+    if err := srv.Shutdown(shutdownCtx); err != nil {
+        log.Fatalf("HTTP shutdown error: %v", err)
+    }
+    log.Println("Graceful shutdown complete.")
 
 }
