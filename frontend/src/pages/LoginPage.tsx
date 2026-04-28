@@ -1,16 +1,12 @@
-import BackgroundGradient from "../components/BackgroundGradiant"
 import AuthHeader from "../components/features/auth/components/AuthHeader"
-import AuthLayout from "../components/layout/authlayout"
+import LoginForm from "../components/features/auth/components/LoginForm"
 
 function LoginPage() {
 
   return (
     <>
-      <BackgroundGradient />
-      <AuthLayout>
-        <AuthHeader />
-        <p>Hello World</p>
-      </AuthLayout>
+      <AuthHeader />
+      <LoginForm />
     </>
   )
 
